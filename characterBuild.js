@@ -5,59 +5,15 @@ let debounceTimer;
 let itemDatabase = {};
 
 export function initCharacterBuild() {
-    console.log('Initializing Character Build');
+    debugBox.log('Initializing Character Build');
     const equipmentInputs = document.querySelectorAll('.equipment-input');
     equipmentInputs.forEach(input => {
         input.addEventListener('input', handleEquipmentInput);
         input.addEventListener('keydown', handleEnterKey);
     });
 
-    // Create debug box
-    createDebugBox();
-
     // Fetch and cache item database
     fetchItemDatabase();
-}
-
-function createDebugBox() {
-    const debugBox = document.createElement('div');
-    debugBox.id = 'debug-box';
-    debugBox.style.cssText = `
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 200px;
-        background-color: rgba(0, 0, 0, 0.8);
-        color: white;
-        font-family: monospace;
-        font-size: 12px;
-        padding: 10px;
-        overflow-y: scroll;
-        display: none;
-    `;
-    document.body.appendChild(debugBox);
-
-    const toggleButton = document.createElement('button');
-    toggleButton.textContent = 'Toggle Debug';
-    toggleButton.style.cssText = `
-        position: fixed;
-        bottom: 10px;
-        right: 10px;
-        z-index: 1000;
-    `;
-    toggleButton.addEventListener('click', () => {
-        debugBox.style.display = debugBox.style.display === 'none' ? 'block' : 'none';
-    });
-    document.body.appendChild(toggleButton);
-}
-
-function logDebug(message) {
-    const debugBox = document.getElementById('debug-box');
-    const logEntry = document.createElement('div');
-    logEntry.textContent = `${new Date().toISOString()} - ${message}`;
-    debugBox.appendChild(logEntry);
-    debugBox.scrollTop = debugBox.scrollHeight;
 }
 
 async function handleEquipmentInput(event) {
@@ -70,6 +26,7 @@ async function handleEquipmentInput(event) {
         debugBox.log(`Searching for: ${query} in slot: ${slot}`);
         const items = await searchItems(query, slot);
         updateInputStatus(input, items);
+        displaySuggestions(items, input);
         saveCharacterBuild();
     }, 300);
 }
@@ -95,6 +52,22 @@ function updateInputStatus(input, items) {
     } else {
         input.style.color = 'red';
     }
+}
+
+function displaySuggestions(items, input) {
+    const suggestionsElement = document.getElementById(`${input.id}-suggestions`);
+    suggestionsElement.innerHTML = '';
+    items.slice(0, 5).forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item.name;
+        li.addEventListener('click', () => {
+            input.value = item.name;
+            suggestionsElement.innerHTML = '';
+            updateInputStatus(input, [item]);
+            saveCharacterBuild();
+        });
+        suggestionsElement.appendChild(li);
+    });
 }
 
 async function searchItems(query, slot) {

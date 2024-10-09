@@ -14,6 +14,7 @@ header {
 
 main {
     padding: 2rem;
+    margin-bottom: 60px; /* Add space for the debug box */
 }
 
 section {
@@ -34,10 +35,24 @@ footer {
     transition: color 0.3s ease;
 }
 
+/* Debug box styles */
 #debug-box {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
     font-family: monospace;
     font-size: 12px;
     line-height: 1.4;
+    z-index: 9999;
+    transition: height 0.3s ease;
+}
+
+#debug-content {
+    padding: 10px;
+    overflow-y: auto;
 }
 
 #debug-box button {
@@ -51,8 +66,4 @@ footer {
 
 #debug-box button:hover {
     background-color: #555;
-}
-
-#debug-content {
-    padding-bottom: 10px;
 }

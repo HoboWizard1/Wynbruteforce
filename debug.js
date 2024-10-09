@@ -3,6 +3,8 @@ export class DebugBox {
         this.createDebugBox();
         this.resizeObserver = new ResizeObserver(() => this.adjustContentHeight());
         this.resizeObserver.observe(document.body);
+        // Initialize the debug box to be visible
+        this.toggleDebugBoxSize();
     }
 
     createDebugBox() {

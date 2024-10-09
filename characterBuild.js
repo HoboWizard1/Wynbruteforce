@@ -1,3 +1,5 @@
+import { debugBox } from './debug.js';
+
 const API_BASE_URL = 'https://api.wynncraft.com/v3';
 let debounceTimer;
 let itemDatabase = {};
@@ -65,7 +67,7 @@ async function handleEquipmentInput(event) {
 
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
-        logDebug(`Searching for: ${query} in slot: ${slot}`);
+        debugBox.log(`Searching for: ${query} in slot: ${slot}`);
         const items = await searchItems(query, slot);
         updateInputStatus(input, items);
         saveCharacterBuild();
@@ -103,13 +105,13 @@ async function searchItems(query, slot) {
         item.name.toLowerCase().includes(query.toLowerCase())
     );
 
-    logDebug(`Found ${filteredItems.length} items matching "${query}" for slot "${slot}"`);
+    debugBox.log(`Found ${filteredItems.length} items matching "${query}" for slot "${slot}"`);
     return filteredItems;
 }
 
 async function fetchItemDatabase() {
     try {
-        logDebug('Fetching item database...');
+        debugBox.log('Fetching item database...');
         const response = await fetch(`${API_BASE_URL}/item/database`);
         const data = await response.json();
         itemDatabase = data.reduce((acc, item) => {
@@ -118,10 +120,10 @@ async function fetchItemDatabase() {
             acc[slot].push(item);
             return acc;
         }, {});
-        logDebug(`Item database fetched and cached. Total items: ${Object.values(itemDatabase).flat().length}`);
+        debugBox.log(`Item database fetched and cached. Total items: ${Object.values(itemDatabase).flat().length}`);
     } catch (error) {
         console.error('Error fetching item database:', error);
-        logDebug(`Error fetching item database: ${error.message}`);
+        debugBox.log(`Error fetching item database: ${error.message}`);
     }
 }
 
@@ -131,7 +133,7 @@ function saveCharacterBuild() {
         build[input.id] = input.value;
     });
     localStorage.setItem('characterBuild', JSON.stringify(build));
-    logDebug('Character build saved to local storage');
+    debugBox.log('Character build saved to local storage');
 }
 
 function loadCharacterBuild() {
@@ -145,7 +147,7 @@ function loadCharacterBuild() {
                 updateInputStatus(input, [{ name: value }]);
             }
         });
-        logDebug('Character build loaded from local storage');
+        debugBox.log('Character build loaded from local storage');
     }
 }
 

@@ -39,3 +39,20 @@ footer {
     font-size: 12px;
     line-height: 1.4;
 }
+
+#debug-box button {
+    background-color: #444;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+#debug-box button:hover {
+    background-color: #555;
+}
+
+#debug-content {
+    padding-bottom: 10px;
+}

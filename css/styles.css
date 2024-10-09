@@ -29,3 +29,13 @@ footer {
     bottom: 0;
     width: 100%;
 }
+
+.equipment-input {
+    transition: color 0.3s ease;
+}
+
+#debug-box {
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.4;
+}

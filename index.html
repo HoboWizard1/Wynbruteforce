@@ -3,31 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wynncraft Build Maker</title>
+    <title>Wynncraft Character Builder</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <header>
-        <h1>Wynncraft Build Maker</h1>
+        <h1>Wynncraft Character Builder</h1>
     </header>
     <main>
-        <section id="build-maker">
-            <!-- Add form elements for character attributes, skills, and items -->
+        <section id="character-build">
+            <h2>Character Build</h2>
+            <div id="equipment">
+                <div class="equipment-slot">
+                    <label for="helmet">Helmet:</label>
+                    <input type="text" id="helmet" class="equipment-input" data-slot="helmet">
+                    <ul class="suggestions" id="helmet-suggestions"></ul>
+                </div>
+                <div class="equipment-slot">
+                    <label for="chestplate">Chestplate:</label>
+                    <input type="text" id="chestplate" class="equipment-input" data-slot="chestplate">
+                    <ul class="suggestions" id="chestplate-suggestions"></ul>
+                </div>
+                <div class="equipment-slot">
+                    <label for="leggings">Leggings:</label>
+                    <input type="text" id="leggings" class="equipment-input" data-slot="leggings">
+                    <ul class="suggestions" id="leggings-suggestions"></ul>
+                </div>
+                <div class="equipment-slot">
+                    <label for="boots">Boots:</label>
+                    <input type="text" id="boots" class="equipment-input" data-slot="boots">
+                    <ul class="suggestions" id="boots-suggestions"></ul>
+                </div>
+                <div class="equipment-slot">
+                    <label for="ring1">Ring 1:</label>
+                    <input type="text" id="ring1" class="equipment-input" data-slot="ring">
+                    <ul class="suggestions" id="ring1-suggestions"></ul>
+                </div>
+                <div class="equipment-slot">
+                    <label for="ring2">Ring 2:</label>
+                    <input type="text" id="ring2" class="equipment-input" data-slot="ring">
+                    <ul class="suggestions" id="ring2-suggestions"></ul>
+                </div>
+                <div class="equipment-slot">
+                    <label for="bracelet">Bracelet:</label>
+                    <input type="text" id="bracelet" class="equipment-input" data-slot="bracelet">
+                    <ul class="suggestions" id="bracelet-suggestions"></ul>
+                </div>
+                <div class="equipment-slot">
+                    <label for="necklace">Necklace:</label>
+                    <input type="text" id="necklace" class="equipment-input" data-slot="necklace">
+                    <ul class="suggestions" id="necklace-suggestions"></ul>
+                </div>
+                <div class="equipment-slot">
+                    <label for="weapon">Weapon:</label>
+                    <input type="text" id="weapon" class="equipment-input" data-slot="weapon">
+                    <ul class="suggestions" id="weapon-suggestions"></ul>
+                </div>
+            </div>
         </section>
-        <section id="build-results">
-            <!-- Display area for build results -->
+        <section id="ability-tree">
+            <h2>Ability Tree</h2>
+            <!-- Ability tree interface will go here -->
         </section>
         <section id="brute-force-optimizer">
             <h2>Brute Force Optimizer</h2>
-            <!-- Add form for optimization parameters -->
-            <button id="optimize-button">Optimize Build</button>
+            <!-- Brute force optimizer interface will go here -->
         </section>
     </main>
     <footer>
-        <p>Powered by the Wynncraft API</p>
+        <p>&copy; 2023 Wynncraft Character Builder</p>
     </footer>
-    <script src="js/api.js"></script>
-    <script src="js/buildMaker.js"></script>
-    <script src="js/bruteForceOptimizer.js"></script>
+    <script src="js/app.js" type="module"></script>
 </body>
 </html>

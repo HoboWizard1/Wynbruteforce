@@ -4,6 +4,7 @@ import { initBruteForceOptimizer } from './bruteForceOptimizer.js';
 import { debugBox } from './debug.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    debugBox.log('Initializing application');
     initCharacterBuild();
     initAbilityTree();
     initBruteForceOptimizer();

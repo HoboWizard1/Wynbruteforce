@@ -1,14 +1,17 @@
 export class DebugBox {
     constructor() {
+        console.log('DebugBox constructor called');
         this.createDebugBox();
         this.resizeObserver = new ResizeObserver(() => this.adjustContentHeight());
         this.resizeObserver.observe(document.body);
         // Initialize the debug box to be visible
         this.debugBox.style.height = '30vh';
         this.adjustContentHeight();
+        console.log('DebugBox initialized');
     }
 
     createDebugBox() {
+        console.log('Creating debug box');
         const debugBox = document.createElement('div');
         debugBox.id = 'debug-box';
         debugBox.style.cssText = `
@@ -64,6 +67,7 @@ export class DebugBox {
         this.debugContent = debugContent;
         this.resizeButton = resizeButton;
         this.debugControls = debugControls;
+        console.log('Debug box created and appended to body');
     }
 
     toggleDebugBoxSize() {
@@ -106,7 +110,9 @@ export class DebugBox {
     }
 }
 
+console.log('Creating debugBox instance');
 export const debugBox = new DebugBox();
+console.log('debugBox instance created');
 
 // Intercept console.log, console.error, and console.warn
 const originalLog = console.log;

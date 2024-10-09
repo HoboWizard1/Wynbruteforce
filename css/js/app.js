@@ -1,13 +1,9 @@
 import { initCharacterBuild } from './characterBuild.js';
-import { initAbilityTree } from './abilityTree.js';
-import { initBruteForceOptimizer } from './bruteForceOptimizer.js';
 import { debugBox } from './debug.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     debugBox.log('Initializing application');
     initCharacterBuild();
-    initAbilityTree();
-    initBruteForceOptimizer();
 });
 
 // Your application code here

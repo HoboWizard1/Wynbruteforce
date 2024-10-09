@@ -4,7 +4,8 @@ export class DebugBox {
         this.resizeObserver = new ResizeObserver(() => this.adjustContentHeight());
         this.resizeObserver.observe(document.body);
         // Initialize the debug box to be visible
-        this.toggleDebugBoxSize();
+        this.debugBox.style.height = '30vh';
+        this.adjustContentHeight();
     }
 
     createDebugBox() {
@@ -15,13 +16,10 @@ export class DebugBox {
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 0;
-            max-height: 60vh;
             background-color: rgba(0, 0, 0, 0.8);
             color: white;
             font-family: monospace;
             font-size: 12px;
-            padding: 10px;
             transition: height 0.3s ease;
             display: flex;
             flex-direction: column;
@@ -34,7 +32,7 @@ export class DebugBox {
         debugContent.style.cssText = `
             flex-grow: 1;
             overflow-y: auto;
-            margin-bottom: 10px;
+            padding: 10px;
         `;
         debugBox.appendChild(debugContent);
 
@@ -42,12 +40,13 @@ export class DebugBox {
         debugControls.style.cssText = `
             display: flex;
             justify-content: space-between;
-            padding-top: 10px;
+            padding: 5px 10px;
+            background-color: rgba(0, 0, 0, 0.5);
         `;
         debugBox.appendChild(debugControls);
 
         const resizeButton = document.createElement('button');
-        resizeButton.textContent = '▲';
+        resizeButton.textContent = '▼';
         resizeButton.addEventListener('click', () => this.toggleDebugBoxSize());
         debugControls.appendChild(resizeButton);
 
@@ -64,19 +63,18 @@ export class DebugBox {
         this.debugBox = debugBox;
         this.debugContent = debugContent;
         this.resizeButton = resizeButton;
+        this.debugControls = debugControls;
     }
 
     toggleDebugBoxSize() {
         const currentHeight = this.debugBox.style.height;
+        const controlsHeight = this.debugControls.offsetHeight;
 
-        if (currentHeight === '0px' || currentHeight === '') {
+        if (currentHeight === `${controlsHeight}px` || currentHeight === '') {
             this.debugBox.style.height = '30vh';
-            this.resizeButton.textContent = '▲';
-        } else if (currentHeight === '30vh') {
-            this.debugBox.style.height = '60vh';
             this.resizeButton.textContent = '▼';
         } else {
-            this.debugBox.style.height = '0px';
+            this.debugBox.style.height = `${controlsHeight}px`;
             this.resizeButton.textContent = '▲';
         }
 
@@ -85,8 +83,8 @@ export class DebugBox {
 
     adjustContentHeight() {
         const boxHeight = this.debugBox.offsetHeight;
-        const controlsHeight = this.debugBox.lastElementChild.offsetHeight;
-        this.debugContent.style.height = `${boxHeight - controlsHeight - 20}px`;
+        const controlsHeight = this.debugControls.offsetHeight;
+        this.debugContent.style.height = `${boxHeight - controlsHeight}px`;
     }
 
     copyDebugContent() {

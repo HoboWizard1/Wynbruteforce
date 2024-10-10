@@ -48,10 +48,10 @@ async function handleEquipmentInput(event) {
                     break;
                 }
             }
-            updateInputValidity(input, isValid);
+            updateInputStatus(input, isValid); // Changed from updateInputValidity to updateInputStatus
         } catch (error) {
             debugBox.log(`Error checking item validity: ${error.message}`);
-            updateInputValidity(input, false);
+            updateInputStatus(input, false); // Changed from updateInputValidity to updateInputStatus
         }
     }, 300);
 }

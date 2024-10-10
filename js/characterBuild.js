@@ -67,14 +67,20 @@ async function searchItems(query, slot) {
 
     for (const category of categories) {
         try {
-            const response = await fetch(`${API_BASE_URL}/item/search/${category}/${query}`);
+            const encodedQuery = encodeURIComponent(query);
+            const url = `${API_BASE_URL}/item/search/${category}/${encodedQuery}`;
+            debugBox.log(`Searching for ${category} items. URL: ${url}`);
+
+            const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
+            debugBox.log(`Found ${data.length} ${category} items for query "${query}"`);
             searchResults.push(...data);
         } catch (error) {
             debugBox.log(`Error searching for ${category} items: ${error.message}`);
+            debugBox.log(`Full error: ${error.stack}`);
         }
     }
 
@@ -141,7 +147,12 @@ async function fetchItemDetails(itemName) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/item/${itemName}`);
+        debugBox.log(`Fetching details for item: ${itemName}`);
+        const encodedItemName = encodeURIComponent(itemName);
+        const url = `${API_BASE_URL}/item/${encodedItemName}`;
+        debugBox.log(`API request URL: ${url}`);
+
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -151,6 +162,35 @@ async function fetchItemDetails(itemName) {
         return data;
     } catch (error) {
         debugBox.log(`Error fetching details for item ${itemName}: ${error.message}`);
+        debugBox.log(`Full error: ${error.stack}`);
+        
+        // Check if the item is a weapon and try a more specific endpoint
+        if (SLOT_TO_CATEGORY_MAP['weapon'].some(category => itemName.toLowerCase().includes(category))) {
+            debugBox.log(`Attempting to fetch ${itemName} as a weapon`);
+            return fetchWeaponDetails(itemName);
+        }
+        
+        throw error;
+    }
+}
+
+async function fetchWeaponDetails(itemName) {
+    try {
+        const encodedItemName = encodeURIComponent(itemName);
+        const url = `${API_BASE_URL}/item/get/${encodedItemName}`;
+        debugBox.log(`Trying alternative weapon API request URL: ${url}`);
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        itemCache[itemName] = data;
+        saveItemCacheToLocalStorage();
+        return data;
+    } catch (error) {
+        debugBox.log(`Error fetching weapon details for ${itemName}: ${error.message}`);
+        debugBox.log(`Full error: ${error.stack}`);
         throw error;
     }
 }

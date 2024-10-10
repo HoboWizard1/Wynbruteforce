@@ -5,9 +5,9 @@ export function initAbilityTree() {
     // TODO: Implement ability tree interface
 }
 
-async function fetchAbilityTree(tree) {
+async function fetchAbilityTree() {
     try {
-        const response = await fetch(`${API_BASE_URL}/ability/tree/${tree}`);
+        const response = await fetch(`${API_BASE_URL}/ability/tree`);
         const data = await response.json();
         return data;
     } catch (error) {
@@ -15,9 +15,19 @@ async function fetchAbilityTree(tree) {
     }
 }
 
-async function fetchAspects(tree) {
+async function fetchAbilityMap() {
     try {
-        const response = await fetch(`${API_BASE_URL}/aspects/${tree}`);
+        const response = await fetch(`${API_BASE_URL}/ability/map`);
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching ability map:', error);
+    }
+}
+
+async function fetchAspects() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/ability/aspects`);
         const data = await response.json();
         return data;
     } catch (error) {

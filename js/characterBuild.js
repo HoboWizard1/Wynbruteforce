@@ -139,12 +139,19 @@ async function searchItems(query, slot) {
 async function fetchItemDatabase(retryCount = 0) {
     try {
         debugBox.log(`Fetching item database... (Attempt ${retryCount + 1})`);
-        const response = await debugUtils.logNetworkRequest(`${API_BASE_URL}/item/database`);
+        
+        // Check API endpoint
+        await debugUtils.checkAPIEndpoint(`${API_BASE_URL}/item/database`);
+        
+        // Check for CORS issues
+        await debugUtils.checkCORSIssues(`${API_BASE_URL}/item/database`);
+        
+        const response = await debugUtils.logNetworkRequest(`${API_BASE_URL}/item/database?fullResult`);
         const data = await response.json();
-        itemDatabase = data.reduce((acc, item) => {
+        itemDatabase = Object.entries(data).reduce((acc, [itemName, item]) => {
             const category = item.type.toLowerCase();
             if (!acc[category]) acc[category] = [];
-            acc[category].push(item);
+            acc[category].push({ ...item, name: itemName });
             return acc;
         }, {});
         debugBox.log(`Item database fetched and cached. Categories: ${Object.keys(itemDatabase).join(', ')}`);
@@ -154,12 +161,23 @@ async function fetchItemDatabase(retryCount = 0) {
         debugBox.log(`Error fetching item database: ${error.message}`);
         debugBox.log(`Error details: ${error.stack}`);
         
+        if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
+            debugBox.log('This appears to be a network error. Checking internet connection...');
+            await debugUtils.checkInternetConnection();
+            debugBox.log('Checking if the API endpoint is blocked...');
+            await debugUtils.checkAPIEndpoint(`${API_BASE_URL}/item/database`);
+        }
+        
         if (retryCount < 3) {
             const retryDelay = Math.pow(2, retryCount) * 1000;
             debugBox.log(`Retrying in ${retryDelay / 1000} seconds...`);
             setTimeout(() => fetchItemDatabase(retryCount + 1), retryDelay);
         } else {
             debugBox.log('Max retry attempts reached. Please check your network connection and try again later.');
+            debugBox.log('If the issue persists, please try the following:');
+            debugBox.log('1. Check if the API endpoint is accessible in your browser');
+            debugBox.log('2. Ensure there are no browser extensions blocking the request');
+            debugBox.log('3. If running locally, try using a CORS proxy or disable CORS in your browser for testing');
         }
     }
 }

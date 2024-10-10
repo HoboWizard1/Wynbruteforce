@@ -51,9 +51,9 @@ export const debugUtils = {
 
     checkAPIEndpoint: async (url) => {
         try {
-            const response = await fetch(url, { method: 'HEAD' });
-            debugBox.log(`API endpoint (${url}) is ${response.ok ? 'reachable' : 'not reachable'}`);
-            debugBox.log(`Status: ${response.status}`);
+            const response = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+            debugBox.log(`API endpoint (${url}) is reachable`);
+            debugBox.log(`Response type: ${response.type}`);
         } catch (error) {
             debugBox.log(`Error checking API endpoint: ${error.message}`);
         }
@@ -62,7 +62,7 @@ export const debugUtils = {
     checkCORSIssues: async (url) => {
         try {
             const response = await fetch(url, { mode: 'cors' });
-            debugBox.log(`CORS is ${response.ok ? 'enabled' : 'not enabled'} for ${url}`);
+            debugBox.log(`CORS is enabled for ${url}`);
         } catch (error) {
             debugBox.log(`CORS issue detected with ${url}: ${error.message}`);
         }

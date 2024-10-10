@@ -3,8 +3,20 @@ import { debugUtils } from './debugUtils.js';
 
 const API_BASE_URL = 'https://api.wynncraft.com/v3';
 let debounceTimer;
+let debugDebounceTimer;
 let itemDatabase = {};
 let lastQuery = '';
+
+const SLOT_TO_CATEGORY_MAP = {
+    'weapon': ['bow', 'wand', 'dagger', 'spear', 'relik'],
+    'helmet': ['helmet'],
+    'chestplate': ['chestplate'],
+    'leggings': ['leggings'],
+    'boots': ['boots'],
+    'ring': ['ring'],
+    'bracelet': ['bracelet'],
+    'necklace': ['necklace']
+};
 
 export function initCharacterBuild() {
     debugBox.log('Initializing Character Build');
@@ -18,24 +30,34 @@ export function initCharacterBuild() {
     loadCharacterBuild();
 }
 
-export function runDebugChecks() {
-    debugUtils.runAllChecks(`${API_BASE_URL}/item/database`);
-}
-
 async function handleEquipmentInput(event) {
     const input = event.target;
     const query = input.value;
     const slot = input.dataset.slot;
 
     clearTimeout(debounceTimer);
+    clearTimeout(debugDebounceTimer);
+
     debounceTimer = setTimeout(async () => {
         if (query !== lastQuery) {
-            debugBox.log(`Searching for: ${query} in slot: ${slot}`);
-            const items = await searchItems(query, slot);
-            updateInputStatus(input, items);
-            displaySuggestions(items, input);
-            saveCharacterBuild();
-            lastQuery = query;
+            debugDebounceTimer = setTimeout(() => {
+                debugBox.log(`Searching for: ${query} in slot: ${slot}`);
+            }, 1000); // Delay debug output by 1 second
+
+            try {
+                const items = await searchItems(query, slot);
+                updateInputStatus(input, items);
+                displaySuggestions(items, input);
+                saveCharacterBuild();
+                lastQuery = query;
+
+                clearTimeout(debugDebounceTimer);
+                debugBox.log(`Search complete for "${query}" in slot "${slot}". Found ${items.length} items.`);
+            } catch (error) {
+                clearTimeout(debugDebounceTimer);
+                debugBox.log(`Error searching for items: ${error.message}`);
+                displayError(input, error.message);
+            }
         }
     }, 300);
 }
@@ -59,7 +81,7 @@ function updateInputStatus(input, items) {
     if (items.some(item => item.name.toLowerCase() === input.value.toLowerCase())) {
         input.style.color = 'green';
     } else {
-        input.style.color = 'red';
+        input.style.color = 'black';
     }
 }
 
@@ -79,18 +101,39 @@ function displaySuggestions(items, input) {
     });
 }
 
+function displayError(input, errorMessage) {
+    const suggestionsElement = document.getElementById(`${input.id}-suggestions`);
+    suggestionsElement.innerHTML = `<li class="error">${errorMessage}</li>`;
+    input.style.color = 'red';
+}
+
 async function searchItems(query, slot) {
     if (query.length < 2) return [];
 
-    const cachedItems = itemDatabase[slot] || [];
-    const filteredItems = cachedItems.filter(item => 
+    const categories = SLOT_TO_CATEGORY_MAP[slot];
+    if (!categories) {
+        throw new Error(`Invalid slot: ${slot}`);
+    }
+
+    const cachedItems = categories.flatMap(category => itemDatabase[category] || []);
+    
+    if (cachedItems.length === 0) {
+        return [];
+    }
+
+    const exactMatches = cachedItems.filter(item => 
+        item.name.toLowerCase() === query.toLowerCase()
+    );
+
+    if (exactMatches.length > 0) {
+        return exactMatches;
+    }
+
+    const partialMatches = cachedItems.filter(item => 
         item.name.toLowerCase().includes(query.toLowerCase())
     );
 
-    if (filteredItems.length > 0) {
-        debugBox.log(`Found ${filteredItems.length} items matching "${query}" for slot "${slot}"`);
-    }
-    return filteredItems;
+    return partialMatches;
 }
 
 async function fetchItemDatabase(retryCount = 0) {
@@ -99,26 +142,20 @@ async function fetchItemDatabase(retryCount = 0) {
         const response = await debugUtils.logNetworkRequest(`${API_BASE_URL}/item/database`);
         const data = await response.json();
         itemDatabase = data.reduce((acc, item) => {
-            const slot = item.type.toLowerCase();
-            if (!acc[slot]) acc[slot] = [];
-            acc[slot].push(item);
+            const category = item.type.toLowerCase();
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(item);
             return acc;
         }, {});
-        debugBox.log(`Item database fetched and cached. Total items: ${Object.values(itemDatabase).flat().length}`);
+        debugBox.log(`Item database fetched and cached. Categories: ${Object.keys(itemDatabase).join(', ')}`);
+        debugBox.log(`Total items: ${Object.values(itemDatabase).flat().length}`);
     } catch (error) {
         console.error('Error fetching item database:', error);
         debugBox.log(`Error fetching item database: ${error.message}`);
         debugBox.log(`Error details: ${error.stack}`);
         
-        // Provide more context about the error
-        if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
-            debugBox.log('This appears to be a network error. Checking internet connection...');
-            await debugUtils.checkInternetConnection();
-        }
-        
-        // Retry logic
         if (retryCount < 3) {
-            const retryDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+            const retryDelay = Math.pow(2, retryCount) * 1000;
             debugBox.log(`Retrying in ${retryDelay / 1000} seconds...`);
             setTimeout(() => fetchItemDatabase(retryCount + 1), retryDelay);
         } else {

@@ -93,9 +93,9 @@ async function searchItems(query, slot) {
     return filteredItems;
 }
 
-async function fetchItemDatabase() {
+async function fetchItemDatabase(retryCount = 0) {
     try {
-        debugBox.log('Fetching item database...');
+        debugBox.log(`Fetching item database... (Attempt ${retryCount + 1})`);
         const response = await debugUtils.logNetworkRequest(`${API_BASE_URL}/item/database`);
         const data = await response.json();
         itemDatabase = data.reduce((acc, item) => {
@@ -109,6 +109,21 @@ async function fetchItemDatabase() {
         console.error('Error fetching item database:', error);
         debugBox.log(`Error fetching item database: ${error.message}`);
         debugBox.log(`Error details: ${error.stack}`);
+        
+        // Provide more context about the error
+        if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
+            debugBox.log('This appears to be a network error. Checking internet connection...');
+            await debugUtils.checkInternetConnection();
+        }
+        
+        // Retry logic
+        if (retryCount < 3) {
+            const retryDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+            debugBox.log(`Retrying in ${retryDelay / 1000} seconds...`);
+            setTimeout(() => fetchItemDatabase(retryCount + 1), retryDelay);
+        } else {
+            debugBox.log('Max retry attempts reached. Please check your network connection and try again later.');
+        }
     }
 }
 

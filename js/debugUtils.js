@@ -81,7 +81,7 @@ export const debugUtils = {
     checkInternetConnection: async () => {
         try {
             const online = navigator.onLine;
-            debugBox.log(`Internet connection: ${online ? 'Online' : 'Offline'}`);
+            debugBox.log(`Internet connection status: ${online ? 'Online' : 'Offline'}`);
             if (online) {
                 const response = await fetch('https://www.google.com', { mode: 'no-cors' });
                 debugBox.log(`Internet connectivity test: ${response.type === 'opaque' ? 'Successful' : 'Failed'}`);

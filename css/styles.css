@@ -33,6 +33,9 @@ footer {
 
 .equipment-input {
     transition: color 0.3s ease;
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
 }
 
 /* Debug box styles */
@@ -128,4 +131,44 @@ footer {
 
 .toggle-details {
     float: right;
+}
+
+.input-container {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-top: none;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    z-index: 1000;
+}
+
+.suggestions li {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.suggestions li:hover {
+    background-color: #f0f0f0;
+}
+
+.suggestions .error {
+    color: red;
+}
+
+.equipment-input {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
 }

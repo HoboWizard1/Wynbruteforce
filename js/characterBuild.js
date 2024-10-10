@@ -35,7 +35,7 @@ export function initCharacterBuild() {
 
 async function handleEquipmentInput(event) {
     const input = event.target;
-    const query = input.value.trim().toLowerCase();
+    const query = input.value.trim();
     const slot = input.dataset.slot;
 
     clearTimeout(debounceTimer);
@@ -58,7 +58,7 @@ async function handleEquipmentInput(event) {
 }
 
 async function searchItems(query, slot) {
-    if (query === lastSearchQuery) {
+    if (query.toLowerCase() === lastSearchQuery.toLowerCase()) {
         return lastSearchResults;
     }
 
@@ -81,6 +81,58 @@ async function searchItems(query, slot) {
     lastSearchQuery = query;
     lastSearchResults = searchResults;
     return searchResults;
+}
+
+function updateInputStatus(input, items) {
+    const exactMatch = items.find(item => item.name.toLowerCase() === input.value.toLowerCase());
+    if (exactMatch) {
+        input.style.color = 'green';
+    } else if (items.length > 0) {
+        input.style.color = 'black';
+    } else {
+        input.style.color = 'red';
+    }
+}
+
+function displaySuggestions(items, input) {
+    const suggestionsElement = document.getElementById(`${input.id}-suggestions`);
+    if (!suggestionsElement) {
+        debugBox.log(`Suggestions element not found for input: ${input.id}`);
+        return;
+    }
+    suggestionsElement.innerHTML = '';
+    items.slice(0, 5).forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item.name;
+        li.addEventListener('click', () => {
+            input.value = item.name;
+            suggestionsElement.innerHTML = '';
+            updateInputStatus(input, [item]);
+            saveCharacterBuild();
+        });
+        suggestionsElement.appendChild(li);
+    });
+}
+
+function displayError(input, errorMessage) {
+    const suggestionsElement = document.getElementById(`${input.id}-suggestions`);
+    if (suggestionsElement) {
+        suggestionsElement.innerHTML = `<li class="error">${errorMessage}</li>`;
+    }
+    input.style.color = 'red';
+}
+
+function handleEnterKey(event) {
+    if (event.key === 'Enter') {
+        const suggestionsElement = document.getElementById(`${event.target.id}-suggestions`);
+        const firstSuggestion = suggestionsElement.querySelector('li');
+        if (firstSuggestion) {
+            event.target.value = firstSuggestion.textContent;
+            suggestionsElement.innerHTML = '';
+            updateInputStatus(event.target, [{ name: firstSuggestion.textContent }]);
+            saveCharacterBuild();
+        }
+    }
 }
 
 async function fetchItemDetails(itemName) {
@@ -138,51 +190,6 @@ function loadItemCacheFromLocalStorage() {
 function saveItemCacheToLocalStorage() {
     localStorage.setItem('itemCache', JSON.stringify(itemCache));
     debugBox.log('Item cache saved to local storage');
-}
-
-function handleEnterKey(event) {
-    if (event.key === 'Enter') {
-        event.preventDefault();
-        const input = event.target;
-        const suggestionsElement = document.getElementById(`${input.id}-suggestions`);
-        const firstSuggestion = suggestionsElement.querySelector('li');
-        if (firstSuggestion) {
-            input.value = firstSuggestion.textContent;
-            suggestionsElement.innerHTML = '';
-            updateInputStatus(input, [{ name: firstSuggestion.textContent }]);
-            saveCharacterBuild();
-        }
-    }
-}
-
-function updateInputStatus(input, items) {
-    if (items.some(item => item.name.toLowerCase() === input.value.toLowerCase())) {
-        input.style.color = 'green';
-    } else {
-        input.style.color = 'black';
-    }
-}
-
-function displaySuggestions(items, input) {
-    const suggestionsElement = document.getElementById(`${input.id}-suggestions`);
-    suggestionsElement.innerHTML = '';
-    items.slice(0, 5).forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item.name;
-        li.addEventListener('click', () => {
-            input.value = item.name;
-            suggestionsElement.innerHTML = '';
-            updateInputStatus(input, [item]);
-            saveCharacterBuild();
-        });
-        suggestionsElement.appendChild(li);
-    });
-}
-
-function displayError(input, errorMessage) {
-    const suggestionsElement = document.getElementById(`${input.id}-suggestions`);
-    suggestionsElement.innerHTML = `<li class="error">${errorMessage}</li>`;
-    input.style.color = 'red';
 }
 
 function saveCharacterBuild() {

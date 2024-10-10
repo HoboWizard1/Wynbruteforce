@@ -1,7 +1,11 @@
 export class DebugBox {
     constructor() {
         console.log('DebugBox constructor called');
-        this.createDebugBox();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.createDebugBox());
+        } else {
+            this.createDebugBox();
+        }
         console.log('DebugBox initialized');
     }
 

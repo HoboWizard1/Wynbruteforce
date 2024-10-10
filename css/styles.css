@@ -49,8 +49,14 @@ footer {
     border: none;
     padding: 5px 10px;
     cursor: pointer;
+    margin-right: 5px;
 }
 
 #debug-box button:hover {
     background-color: #555;
+}
+
+#debug-box button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

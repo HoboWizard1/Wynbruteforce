@@ -1,11 +1,7 @@
 export class DebugBox {
     constructor() {
         console.log('DebugBox constructor called');
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.createDebugBox());
-        } else {
-            this.createDebugBox();
-        }
+        this.createDebugBox();
         console.log('DebugBox initialized');
     }
 
@@ -18,7 +14,7 @@ export class DebugBox {
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 30vh;
+            height: 15vh;
             background-color: rgba(0, 0, 0, 0.9);
             color: white;
             font-family: monospace;
@@ -26,6 +22,7 @@ export class DebugBox {
             display: flex;
             flex-direction: column;
             z-index: 9999;
+            transition: height 0.3s ease;
         `;
         document.body.appendChild(debugBox);
 
@@ -47,10 +44,23 @@ export class DebugBox {
         `;
         debugBox.appendChild(debugControls);
 
-        const resizeButton = document.createElement('button');
-        resizeButton.textContent = '▼';
-        resizeButton.addEventListener('click', () => this.toggleDebugBoxSize());
-        debugControls.appendChild(resizeButton);
+        const resizeButtons = document.createElement('div');
+        resizeButtons.style.cssText = `
+            display: flex;
+            gap: 5px;
+        `;
+
+        const upButton = document.createElement('button');
+        upButton.textContent = '▲';
+        upButton.addEventListener('click', () => this.resizeDebugBox('up'));
+        resizeButtons.appendChild(upButton);
+
+        const downButton = document.createElement('button');
+        downButton.textContent = '▼';
+        downButton.addEventListener('click', () => this.resizeDebugBox('down'));
+        resizeButtons.appendChild(downButton);
+
+        debugControls.appendChild(resizeButtons);
 
         const copyButton = document.createElement('button');
         copyButton.textContent = 'Copy Debug';
@@ -64,22 +74,38 @@ export class DebugBox {
 
         this.debugBox = debugBox;
         this.debugContent = debugContent;
-        this.resizeButton = resizeButton;
+        this.upButton = upButton;
+        this.downButton = downButton;
         console.log('Debug box created and appended to body');
     }
 
-    toggleDebugBoxSize() {
+    resizeDebugBox(direction) {
         const currentHeight = this.debugBox.style.height;
-        if (currentHeight === '30vh') {
-            this.debugBox.style.height = '60vh';
-            this.resizeButton.textContent = '▼';
-        } else if (currentHeight === '60vh') {
-            this.debugBox.style.height = '30vh';
-            this.resizeButton.textContent = '▲';
-        } else {
-            this.debugBox.style.height = '30vh';
-            this.resizeButton.textContent = '▲';
+        const controlsHeight = this.debugBox.lastElementChild.offsetHeight;
+
+        if (direction === 'up') {
+            if (currentHeight === '15vh') {
+                this.debugBox.style.height = '30vh';
+            } else if (currentHeight === '30vh') {
+                this.debugBox.style.height = '60vh';
+            }
+        } else if (direction === 'down') {
+            if (currentHeight === '60vh') {
+                this.debugBox.style.height = '30vh';
+            } else if (currentHeight === '30vh') {
+                this.debugBox.style.height = '15vh';
+            } else if (currentHeight === '15vh') {
+                this.debugBox.style.height = `${controlsHeight}px`;
+            }
         }
+
+        this.updateButtonStates();
+    }
+
+    updateButtonStates() {
+        const currentHeight = this.debugBox.style.height;
+        this.upButton.disabled = currentHeight === '60vh';
+        this.downButton.disabled = currentHeight === `${this.debugBox.lastElementChild.offsetHeight}px`;
     }
 
     copyDebugContent() {

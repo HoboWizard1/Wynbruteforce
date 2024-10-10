@@ -20,7 +20,7 @@ export class DebugBox {
             font-size: 12px;
             display: flex;
             flex-direction: column;
-            z-index: 9999;
+            z-index: 2147483647;
         `;
         document.body.appendChild(debugBox);
 
@@ -82,7 +82,9 @@ export class DebugBox {
         const currentHeight = this.debugContent.style.height;
 
         if (direction === 'up') {
-            if (currentHeight === '15vh') {
+            if (currentHeight === '0px' || currentHeight === '0') {
+                this.debugContent.style.height = '15vh';
+            } else if (currentHeight === '15vh') {
                 this.debugContent.style.height = '30vh';
             } else if (currentHeight === '30vh') {
                 this.debugContent.style.height = '60vh';
@@ -94,7 +96,12 @@ export class DebugBox {
                 this.debugContent.style.height = '15vh';
             } else if (currentHeight === '15vh') {
                 this.debugContent.style.height = '0';
+                this.debugContent.style.padding = '0';
             }
+        }
+
+        if (this.debugContent.style.height !== '0' && this.debugContent.style.height !== '0px') {
+            this.debugContent.style.padding = '10px';
         }
 
         this.updateButtonStates();
@@ -103,7 +110,7 @@ export class DebugBox {
     updateButtonStates() {
         const currentHeight = this.debugContent.style.height;
         this.upButton.disabled = currentHeight === '60vh';
-        this.downButton.disabled = currentHeight === '0';
+        this.downButton.disabled = currentHeight === '0' || currentHeight === '0px';
     }
 
     copyDebugContent() {

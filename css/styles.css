@@ -62,5 +62,11 @@ footer {
 }
 
 #debug-box {
-    min-height: 30px; /* Adjust this value as needed */
+    position: fixed !important;
+    z-index: 2147483647 !important;
+    min-height: 30px; /* Ensures the control bar is always visible */
+}
+
+#debug-content {
+    background-color: rgba(0, 0, 0, 0.9);
 }

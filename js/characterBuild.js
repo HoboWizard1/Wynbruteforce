@@ -2,6 +2,7 @@ import { debugBox } from './debug.js';
 import { debugUtils } from './debugUtils.js';
 
 const API_BASE_URL = 'https://api.wynncraft.com/v3';
+const LEGACY_API_BASE_URL = 'https://api.wynncraft.com/public_api.php?action=itemDB&category=';
 let debounceTimer;
 let validItemCache = new Set(); // Cache for valid item names
 
@@ -38,50 +39,29 @@ async function handleEquipmentInput(event) {
 
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
-        if (query.length < 2) {
-            updateInputStatus(input, false);
-            return;
-        }
-
-        if (query !== lastDebounceLog) {
-            debugBox.log(`Checking "${query}" for slot: ${slot}`);
-            lastDebounceLog = query;
-        }
-
-        // Check if the item is already known to be valid
-        if (validItemCache.has(query.toLowerCase())) {
-            updateInputStatus(input, true);
-            saveCharacterBuild();
-            return;
-        }
-
         try {
-            const isValid = await checkItemValidity(query, slot);
-            updateInputStatus(input, isValid);
-            if (isValid) {
-                validItemCache.add(query.toLowerCase()); // Add to cache if valid
+            const categories = SLOT_TO_CATEGORY_MAP[slot];
+            let isValid = false;
+            for (const category of categories) {
+                if (await checkItemValidityForCategory(query, category)) {
+                    isValid = true;
+                    break;
+                }
             }
-            saveCharacterBuild();
+            updateInputValidity(input, isValid);
         } catch (error) {
             debugBox.log(`Error checking item validity: ${error.message}`);
-            updateInputStatus(input, false);
+            updateInputValidity(input, false);
         }
-    }, 500);
+    }, 300);
 }
 
 async function checkItemValidity(query, slot) {
     const categories = SLOT_TO_CATEGORY_MAP[slot];
     for (const category of categories) {
         try {
-            const encodedQuery = encodeURIComponent(query);
-            const url = `${API_BASE_URL}/item/search/${category}/${encodedQuery}`;
-            
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data && data.some(item => item.name.toLowerCase() === query.toLowerCase())) {
+            const isValid = await checkItemValidityForCategory(query, category);
+            if (isValid) {
                 debugBox.log(`Valid ${category} item found: "${query}"`);
                 return true;
             }
@@ -93,6 +73,37 @@ async function checkItemValidity(query, slot) {
     return false;
 }
 
+async function checkItemValidityForCategory(query, category) {
+    const retries = 3;
+    for (let i = 0; i < retries; i++) {
+        try {
+            // ... existing code ...
+
+            // If search doesn't find a match, try the database endpoint
+            const databaseUrl = `${API_BASE_URL}/item/database?fullResult`;
+            const databaseResponse = await fetch(databaseUrl);
+            if (databaseResponse.ok) {
+                const databaseData = await databaseResponse.json();
+                const matchingItem = Object.values(databaseData).find(item => 
+                    item.internalName.toLowerCase() === query.toLowerCase() &&
+                    ((category === 'weapon' && ['bow', 'relik', 'wand', 'dagger', 'spear'].includes(item.type)) ||
+                    (category === 'helmet' && item.type === 'helmet') ||
+                    (category === 'chestplate' && item.type === 'chestplate') ||
+                    (category === 'leggings' && item.type === 'leggings') ||
+                    (category === 'boots' && item.type === 'boots') ||
+                    (['ring', 'bracelet', 'necklace'].includes(category) && item.type === category))
+                );
+                if (matchingItem) {
+                    return true;
+                }
+            }
+            // ... existing code ...
+        } catch (error) {
+            // ... existing code ...
+        }
+    }
+    return false;
+}
 function updateInputStatus(input, isValid) {
     input.style.color = isValid ? 'green' : 'red';
 }

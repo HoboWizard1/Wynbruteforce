@@ -3,9 +3,9 @@ import { debugUtils } from './debugUtils.js';
 
 const API_BASE_URL = 'https://api.wynncraft.com/v3';
 let debounceTimer;
-let debugDebounceTimer;
-let itemDatabase = {};
-let lastQuery = '';
+let itemCache = {};
+let lastSearchQuery = '';
+let lastSearchResults = [];
 
 const SLOT_TO_CATEGORY_MAP = {
     'weapon': ['bow', 'wand', 'dagger', 'spear', 'relik'],
@@ -29,40 +29,132 @@ export function initCharacterBuild() {
     const buildButton = document.getElementById('build-button');
     buildButton.addEventListener('click', buildCharacter);
 
-    fetchItemDatabase();
     loadCharacterBuild();
+    loadItemCacheFromLocalStorage();
 }
 
 async function handleEquipmentInput(event) {
     const input = event.target;
-    const query = input.value;
+    const query = input.value.trim().toLowerCase();
     const slot = input.dataset.slot;
 
     clearTimeout(debounceTimer);
-    clearTimeout(debugDebounceTimer);
-
     debounceTimer = setTimeout(async () => {
-        if (query !== lastQuery) {
-            debugDebounceTimer = setTimeout(() => {
-                debugBox.log(`Searching for: ${query} in slot: ${slot}`);
-            }, 1000); // Delay debug output by 1 second
+        if (query.length < 2) {
+            displaySuggestions([], input);
+            return;
+        }
 
-            try {
-                const items = await searchItems(query, slot);
-                updateInputStatus(input, items);
-                displaySuggestions(items, input);
-                saveCharacterBuild();
-                lastQuery = query;
-
-                clearTimeout(debugDebounceTimer);
-                debugBox.log(`Search complete for "${query}" in slot "${slot}". Found ${items.length} items.`);
-            } catch (error) {
-                clearTimeout(debugDebounceTimer);
-                debugBox.log(`Error searching for items: ${error.message}`);
-                displayError(input, error.message);
-            }
+        try {
+            const items = await searchItems(query, slot);
+            updateInputStatus(input, items);
+            displaySuggestions(items, input);
+            saveCharacterBuild();
+        } catch (error) {
+            debugBox.log(`Error searching for items: ${error.message}`);
+            displayError(input, error.message);
         }
     }, 300);
+}
+
+async function searchItems(query, slot) {
+    if (query === lastSearchQuery) {
+        return lastSearchResults;
+    }
+
+    if (query.length < lastSearchQuery.length && query === lastSearchQuery.slice(0, query.length)) {
+        lastSearchResults = lastSearchResults.filter(item => item.name.toLowerCase().includes(query));
+        lastSearchQuery = query;
+        return lastSearchResults;
+    }
+
+    const categories = SLOT_TO_CATEGORY_MAP[slot];
+    const searchResults = [];
+
+    for (const category of categories) {
+        const cachedResults = getCachedSearchResults(category, query);
+        if (cachedResults) {
+            searchResults.push(...cachedResults);
+        } else {
+            try {
+                const response = await fetch(`${API_BASE_URL}/item/search/${category}/${query}`);
+                const data = await response.json();
+                cacheSearchResults(category, query, data);
+                searchResults.push(...data);
+            } catch (error) {
+                debugBox.log(`Error searching for ${category} items: ${error.message}`);
+            }
+        }
+    }
+
+    lastSearchQuery = query;
+    lastSearchResults = searchResults;
+    return searchResults;
+}
+
+function getCachedSearchResults(category, query) {
+    const cacheKey = `${category}_${query}`;
+    return itemCache[cacheKey];
+}
+
+function cacheSearchResults(category, query, results) {
+    const cacheKey = `${category}_${query}`;
+    itemCache[cacheKey] = results;
+    saveItemCacheToLocalStorage();
+}
+
+async function fetchItemDetails(itemName) {
+    if (itemCache[itemName]) {
+        return itemCache[itemName];
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/item/${itemName}`);
+        const data = await response.json();
+        itemCache[itemName] = data;
+        saveItemCacheToLocalStorage();
+        return data;
+    } catch (error) {
+        debugBox.log(`Error fetching details for item ${itemName}: ${error.message}`);
+        throw error;
+    }
+}
+
+async function buildCharacter() {
+    const build = {};
+    const statBreakdown = {};
+    const itemList = [];
+
+    for (const input of document.querySelectorAll('.equipment-input')) {
+        const itemName = input.value.trim();
+        const slot = input.dataset.slot;
+        if (itemName) {
+            try {
+                const item = await fetchItemDetails(itemName);
+                build[slot] = item;
+                itemList.push(item);
+                updateStatBreakdown(statBreakdown, item);
+            } catch (error) {
+                debugBox.log(`Error fetching details for ${itemName}: ${error.message}`);
+            }
+        }
+    }
+
+    displayStatBreakdown(statBreakdown);
+    displayItemList(itemList);
+}
+
+function loadItemCacheFromLocalStorage() {
+    const cachedData = localStorage.getItem('itemCache');
+    if (cachedData) {
+        itemCache = JSON.parse(cachedData);
+        debugBox.log('Item cache loaded from local storage');
+    }
+}
+
+function saveItemCacheToLocalStorage() {
+    localStorage.setItem('itemCache', JSON.stringify(itemCache));
+    debugBox.log('Item cache saved to local storage');
 }
 
 function handleEnterKey(event) {
@@ -110,81 +202,6 @@ function displayError(input, errorMessage) {
     input.style.color = 'red';
 }
 
-async function searchItems(query, slot) {
-    if (query.length < 2) return [];
-
-    const categories = SLOT_TO_CATEGORY_MAP[slot];
-    if (!categories) {
-        throw new Error(`Invalid slot: ${slot}`);
-    }
-
-    const cachedItems = categories.flatMap(category => itemDatabase[category] || []);
-    
-    if (cachedItems.length === 0) {
-        return [];
-    }
-
-    const exactMatches = cachedItems.filter(item => 
-        item.name.toLowerCase() === query.toLowerCase()
-    );
-
-    if (exactMatches.length > 0) {
-        return exactMatches;
-    }
-
-    const partialMatches = cachedItems.filter(item => 
-        item.name.toLowerCase().includes(query.toLowerCase())
-    );
-
-    return partialMatches;
-}
-
-async function fetchItemDatabase(retryCount = 0) {
-    try {
-        debugBox.log(`Fetching item database... (Attempt ${retryCount + 1})`);
-        
-        // Check API endpoint
-        await debugUtils.checkAPIEndpoint(`${API_BASE_URL}/item/database`);
-        
-        // Check for CORS issues
-        await debugUtils.checkCORSIssues(`${API_BASE_URL}/item/database`);
-        
-        const response = await debugUtils.logNetworkRequest(`${API_BASE_URL}/item/database?fullResult`);
-        const data = await response.json();
-        itemDatabase = Object.entries(data).reduce((acc, [itemName, item]) => {
-            const category = item.type.toLowerCase();
-            if (!acc[category]) acc[category] = [];
-            acc[category].push({ ...item, name: itemName });
-            return acc;
-        }, {});
-        debugBox.log(`Item database fetched and cached. Categories: ${Object.keys(itemDatabase).join(', ')}`);
-        debugBox.log(`Total items: ${Object.values(itemDatabase).flat().length}`);
-    } catch (error) {
-        console.error('Error fetching item database:', error);
-        debugBox.log(`Error fetching item database: ${error.message}`);
-        debugBox.log(`Error details: ${error.stack}`);
-        
-        if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
-            debugBox.log('This appears to be a network error. Checking internet connection...');
-            await debugUtils.checkInternetConnection();
-            debugBox.log('Checking if the API endpoint is blocked...');
-            await debugUtils.checkAPIEndpoint(`${API_BASE_URL}/item/database`);
-        }
-        
-        if (retryCount < 3) {
-            const retryDelay = Math.pow(2, retryCount) * 1000;
-            debugBox.log(`Retrying in ${retryDelay / 1000} seconds...`);
-            setTimeout(() => fetchItemDatabase(retryCount + 1), retryDelay);
-        } else {
-            debugBox.log('Max retry attempts reached. Please check your network connection and try again later.');
-            debugBox.log('If the issue persists, please try the following:');
-            debugBox.log('1. Check if the API endpoint is accessible in your browser');
-            debugBox.log('2. Ensure there are no browser extensions blocking the request');
-            debugBox.log('3. If running locally, try using a CORS proxy or disable CORS in your browser for testing');
-        }
-    }
-}
-
 function saveCharacterBuild() {
     const build = {};
     document.querySelectorAll('.equipment-input').forEach(input => {
@@ -207,38 +224,6 @@ export function loadCharacterBuild() {
         });
         debugBox.log('Character build loaded from local storage');
     }
-}
-
-function buildCharacter() {
-    const build = {};
-    const statBreakdown = {};
-    const itemList = [];
-
-    document.querySelectorAll('.equipment-input').forEach(input => {
-        const itemName = input.value;
-        const slot = input.dataset.slot;
-        if (itemName) {
-            const item = findItem(itemName, slot);
-            if (item) {
-                build[slot] = item;
-                itemList.push(item);
-                updateStatBreakdown(statBreakdown, item);
-            }
-        }
-    });
-
-    displayStatBreakdown(statBreakdown);
-    displayItemList(itemList);
-}
-
-function findItem(itemName, slot) {
-    const categories = SLOT_TO_CATEGORY_MAP[slot];
-    for (const category of categories) {
-        const items = itemDatabase[category] || [];
-        const item = items.find(i => i.name.toLowerCase() === itemName.toLowerCase());
-        if (item) return item;
-    }
-    return null;
 }
 
 function updateStatBreakdown(statBreakdown, item) {

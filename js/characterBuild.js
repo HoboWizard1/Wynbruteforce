@@ -31,27 +31,34 @@ export function initCharacterBuild() {
     loadValidItemCache(); // Load the valid item cache
 }
 
-let lastDebounceLog = '';
 async function handleEquipmentInput(event) {
     const input = event.target;
     const query = input.value.trim();
     const slot = input.dataset.slot;
 
+    console.log(`Handling input for slot: ${slot}, query: ${query}`);
+
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
         try {
+            console.log(`Debounce timer fired for slot: ${slot}`);
             const categories = SLOT_TO_CATEGORY_MAP[slot];
             let isValid = false;
             for (const category of categories) {
+                console.log(`Checking validity for category: ${category}`);
                 if (await checkItemValidityForCategory(query, category)) {
                     isValid = true;
                     break;
                 }
             }
-            updateInputStatus(input, isValid); // Changed from updateInputValidity to updateInputStatus
+            console.log(`Updating input status: isValid = ${isValid}`);
+            updateInputStatus(input, isValid);
         } catch (error) {
-            debugBox.log(`Error checking item validity: ${error.message}`);
-            updateInputStatus(input, false); // Changed from updateInputValidity to updateInputStatus
+            console.error(`Error in handleEquipmentInput: ${error.message}`);
+            console.error(`Error stack: ${error.stack}`);
+            debugBox.log(`Error in handleEquipmentInput: ${error.message}`);
+            debugBox.log(`Error stack: ${error.stack}`);
+            updateInputStatus(input, false);
         }
     }, 300);
 }

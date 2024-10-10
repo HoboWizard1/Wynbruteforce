@@ -26,6 +26,9 @@ export function initCharacterBuild() {
         input.addEventListener('keydown', handleEnterKey);
     });
 
+    const buildButton = document.getElementById('build-button');
+    buildButton.addEventListener('click', buildCharacter);
+
     fetchItemDatabase();
     loadCharacterBuild();
 }
@@ -206,5 +209,84 @@ export function loadCharacterBuild() {
     }
 }
 
-// Remove this event listener
-// document.addEventListener('DOMContentLoaded', loadCharacterBuild);
+function buildCharacter() {
+    const build = {};
+    const statBreakdown = {};
+    const itemList = [];
+
+    document.querySelectorAll('.equipment-input').forEach(input => {
+        const itemName = input.value;
+        const slot = input.dataset.slot;
+        if (itemName) {
+            const item = findItem(itemName, slot);
+            if (item) {
+                build[slot] = item;
+                itemList.push(item);
+                updateStatBreakdown(statBreakdown, item);
+            }
+        }
+    });
+
+    displayStatBreakdown(statBreakdown);
+    displayItemList(itemList);
+}
+
+function findItem(itemName, slot) {
+    const categories = SLOT_TO_CATEGORY_MAP[slot];
+    for (const category of categories) {
+        const items = itemDatabase[category] || [];
+        const item = items.find(i => i.name.toLowerCase() === itemName.toLowerCase());
+        if (item) return item;
+    }
+    return null;
+}
+
+function updateStatBreakdown(statBreakdown, item) {
+    Object.entries(item).forEach(([stat, value]) => {
+        if (typeof value === 'number') {
+            statBreakdown[stat] = (statBreakdown[stat] || 0) + value;
+        }
+    });
+}
+
+function displayStatBreakdown(statBreakdown) {
+    const statBreakdownElement = document.getElementById('stat-breakdown');
+    statBreakdownElement.innerHTML = '<h3>Stat Breakdown</h3>';
+    Object.entries(statBreakdown).forEach(([stat, value]) => {
+        const statElement = document.createElement('p');
+        statElement.textContent = `${stat}: ${value}`;
+        statBreakdownElement.appendChild(statElement);
+    });
+}
+
+function displayItemList(itemList) {
+    const itemListElement = document.getElementById('item-list');
+    itemListElement.innerHTML = '<h3>Item List</h3>';
+    itemList.forEach(item => {
+        const itemElement = document.createElement('div');
+        itemElement.className = 'item';
+        
+        const itemHeader = document.createElement('h4');
+        itemHeader.innerHTML = `${item.name} <span class="toggle-details">▼</span>`;
+        itemElement.appendChild(itemHeader);
+
+        const itemDetails = document.createElement('div');
+        itemDetails.className = 'item-details hidden';
+        Object.entries(item).forEach(([stat, value]) => {
+            if (stat !== 'name') {
+                const statElement = document.createElement('p');
+                statElement.textContent = `${stat}: ${value}`;
+                itemDetails.appendChild(statElement);
+            }
+        });
+        itemElement.appendChild(itemDetails);
+
+        itemHeader.addEventListener('click', () => {
+            itemDetails.classList.toggle('hidden');
+            itemHeader.querySelector('.toggle-details').textContent = 
+                itemDetails.classList.contains('hidden') ? '▼' : '▲';
+        });
+
+        itemListElement.appendChild(itemElement);
+    });
+}

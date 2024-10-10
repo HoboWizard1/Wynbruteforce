@@ -2,9 +2,9 @@ export class DebugBox {
     constructor() {
         console.log('DebugBox constructor called');
         this.createDebugBox();
-        this.logQueue = [];
-        this.isLogging = false;
-        this.debounceTime = 300; // 300ms debounce time
+        this.actionQueue = [];
+        this.isProcessing = false;
+        this.debounceTime = 50; // Reduced debounce time for more responsiveness
         console.log('DebugBox initialized');
     }
 
@@ -117,35 +117,47 @@ export class DebugBox {
     }
 
     copyDebugContent() {
-        navigator.clipboard.writeText(this.debugContent.innerText)
-            .then(() => this.log('Debug content copied to clipboard'))
-            .catch(err => this.log('Failed to copy debug content: ' + err));
+        this.queueAction(() => {
+            navigator.clipboard.writeText(this.debugContent.innerText)
+                .then(() => this.addLogEntry('Debug content copied to clipboard'))
+                .catch(err => this.addLogEntry('Failed to copy debug content: ' + err));
+        });
     }
 
     clearDebugContent() {
-        this.debugContent.innerHTML = '';
-        this.log('Debug content cleared');
+        this.queueAction(() => {
+            this.debugContent.innerHTML = '';
+            this.addLogEntry('Debug content cleared');
+        });
     }
 
     log(message) {
-        this.logQueue.push(`${new Date().toISOString()} - ${message}`);
-        if (!this.isLogging) {
-            this.processLogQueue();
+        this.queueAction(() => this.addLogEntry(message));
+    }
+
+    addLogEntry(message) {
+        const logEntry = document.createElement('div');
+        logEntry.textContent = `${new Date().toISOString()} - ${message}`;
+        this.debugContent.appendChild(logEntry);
+        this.debugContent.scrollTop = this.debugContent.scrollHeight;
+    }
+
+    queueAction(action) {
+        this.actionQueue.push(action);
+        if (!this.isProcessing) {
+            this.processActionQueue();
         }
     }
 
-    processLogQueue() {
-        this.isLogging = true;
+    processActionQueue() {
+        this.isProcessing = true;
         setTimeout(() => {
-            if (this.logQueue.length > 0) {
-                const logEntry = document.createElement('div');
-                logEntry.innerHTML = this.logQueue.join('<br>');
-                this.debugContent.appendChild(logEntry);
-                this.debugContent.scrollTop = this.debugContent.scrollHeight;
-                this.logQueue = [];
-                this.processLogQueue();
+            if (this.actionQueue.length > 0) {
+                const action = this.actionQueue.shift();
+                action();
+                this.processActionQueue();
             } else {
-                this.isLogging = false;
+                this.isProcessing = false;
             }
         }, this.debounceTime);
     }

@@ -62,45 +62,25 @@ async function searchItems(query, slot) {
         return lastSearchResults;
     }
 
-    if (query.length < lastSearchQuery.length && query === lastSearchQuery.slice(0, query.length)) {
-        lastSearchResults = lastSearchResults.filter(item => item.name.toLowerCase().includes(query));
-        lastSearchQuery = query;
-        return lastSearchResults;
-    }
-
     const categories = SLOT_TO_CATEGORY_MAP[slot];
     const searchResults = [];
 
     for (const category of categories) {
-        const cachedResults = getCachedSearchResults(category, query);
-        if (cachedResults) {
-            searchResults.push(...cachedResults);
-        } else {
-            try {
-                const response = await fetch(`${API_BASE_URL}/item/search/${category}/${query}`);
-                const data = await response.json();
-                cacheSearchResults(category, query, data);
-                searchResults.push(...data);
-            } catch (error) {
-                debugBox.log(`Error searching for ${category} items: ${error.message}`);
+        try {
+            const response = await fetch(`${API_BASE_URL}/item/search/${category}/${query}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+            const data = await response.json();
+            searchResults.push(...data);
+        } catch (error) {
+            debugBox.log(`Error searching for ${category} items: ${error.message}`);
         }
     }
 
     lastSearchQuery = query;
     lastSearchResults = searchResults;
     return searchResults;
-}
-
-function getCachedSearchResults(category, query) {
-    const cacheKey = `${category}_${query}`;
-    return itemCache[cacheKey];
-}
-
-function cacheSearchResults(category, query, results) {
-    const cacheKey = `${category}_${query}`;
-    itemCache[cacheKey] = results;
-    saveItemCacheToLocalStorage();
 }
 
 async function fetchItemDetails(itemName) {
@@ -110,6 +90,9 @@ async function fetchItemDetails(itemName) {
 
     try {
         const response = await fetch(`${API_BASE_URL}/item/${itemName}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         itemCache[itemName] = data;
         saveItemCacheToLocalStorage();

@@ -14,7 +14,6 @@ export class DebugBox {
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 15vh;
             background-color: rgba(0, 0, 0, 0.9);
             color: white;
             font-family: monospace;
@@ -22,16 +21,16 @@ export class DebugBox {
             display: flex;
             flex-direction: column;
             z-index: 9999;
-            transition: height 0.3s ease;
         `;
         document.body.appendChild(debugBox);
 
         const debugContent = document.createElement('div');
         debugContent.id = 'debug-content';
         debugContent.style.cssText = `
-            flex-grow: 1;
+            height: 15vh;
             overflow-y: auto;
             padding: 10px;
+            transition: height 0.3s ease;
         `;
         debugBox.appendChild(debugContent);
 
@@ -80,22 +79,21 @@ export class DebugBox {
     }
 
     resizeDebugBox(direction) {
-        const currentHeight = this.debugBox.style.height;
-        const controlsHeight = this.debugBox.lastElementChild.offsetHeight;
+        const currentHeight = this.debugContent.style.height;
 
         if (direction === 'up') {
             if (currentHeight === '15vh') {
-                this.debugBox.style.height = '30vh';
+                this.debugContent.style.height = '30vh';
             } else if (currentHeight === '30vh') {
-                this.debugBox.style.height = '60vh';
+                this.debugContent.style.height = '60vh';
             }
         } else if (direction === 'down') {
             if (currentHeight === '60vh') {
-                this.debugBox.style.height = '30vh';
+                this.debugContent.style.height = '30vh';
             } else if (currentHeight === '30vh') {
-                this.debugBox.style.height = '15vh';
+                this.debugContent.style.height = '15vh';
             } else if (currentHeight === '15vh') {
-                this.debugBox.style.height = `${controlsHeight}px`;
+                this.debugContent.style.height = '0';
             }
         }
 
@@ -103,9 +101,9 @@ export class DebugBox {
     }
 
     updateButtonStates() {
-        const currentHeight = this.debugBox.style.height;
+        const currentHeight = this.debugContent.style.height;
         this.upButton.disabled = currentHeight === '60vh';
-        this.downButton.disabled = currentHeight === `${this.debugBox.lastElementChild.offsetHeight}px`;
+        this.downButton.disabled = currentHeight === '0';
     }
 
     copyDebugContent() {

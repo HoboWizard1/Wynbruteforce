@@ -60,3 +60,7 @@ footer {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+#debug-box {
+    min-height: 30px; /* Adjust this value as needed */
+}

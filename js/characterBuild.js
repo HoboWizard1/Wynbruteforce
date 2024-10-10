@@ -4,6 +4,7 @@ import { debugUtils } from './debugUtils.js';
 const API_BASE_URL = 'https://api.wynncraft.com/v3';
 let debounceTimer;
 let itemDatabase = {};
+let lastQuery = '';
 
 export function initCharacterBuild() {
     debugBox.log('Initializing Character Build');
@@ -13,7 +14,6 @@ export function initCharacterBuild() {
         input.addEventListener('keydown', handleEnterKey);
     });
 
-    // Fetch and cache item database
     fetchItemDatabase();
     loadCharacterBuild();
 }
@@ -29,11 +29,14 @@ async function handleEquipmentInput(event) {
 
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
-        debugBox.log(`Searching for: ${query} in slot: ${slot}`);
-        const items = await searchItems(query, slot);
-        updateInputStatus(input, items);
-        displaySuggestions(items, input);
-        saveCharacterBuild();
+        if (query !== lastQuery) {
+            debugBox.log(`Searching for: ${query} in slot: ${slot}`);
+            const items = await searchItems(query, slot);
+            updateInputStatus(input, items);
+            displaySuggestions(items, input);
+            saveCharacterBuild();
+            lastQuery = query;
+        }
     }, 300);
 }
 
@@ -84,7 +87,9 @@ async function searchItems(query, slot) {
         item.name.toLowerCase().includes(query.toLowerCase())
     );
 
-    debugBox.log(`Found ${filteredItems.length} items matching "${query}" for slot "${slot}"`);
+    if (filteredItems.length > 0) {
+        debugBox.log(`Found ${filteredItems.length} items matching "${query}" for slot "${slot}"`);
+    }
     return filteredItems;
 }
 

@@ -2,6 +2,9 @@ export class DebugBox {
     constructor() {
         console.log('DebugBox constructor called');
         this.createDebugBox();
+        this.logQueue = [];
+        this.isLogging = false;
+        this.debounceTime = 300; // 300ms debounce time
         console.log('DebugBox initialized');
     }
 
@@ -122,6 +125,29 @@ export class DebugBox {
     clearDebugContent() {
         this.debugContent.innerHTML = '';
         this.log('Debug content cleared');
+    }
+
+    log(message) {
+        this.logQueue.push(`${new Date().toISOString()} - ${message}`);
+        if (!this.isLogging) {
+            this.processLogQueue();
+        }
+    }
+
+    processLogQueue() {
+        this.isLogging = true;
+        setTimeout(() => {
+            if (this.logQueue.length > 0) {
+                const logEntry = document.createElement('div');
+                logEntry.textContent = this.logQueue.join('\n');
+                this.debugContent.appendChild(logEntry);
+                this.debugContent.scrollTop = this.debugContent.scrollHeight;
+                this.logQueue = [];
+                this.processLogQueue();
+            } else {
+                this.isLogging = false;
+            }
+        }, this.debounceTime);
     }
 }
 

@@ -139,7 +139,7 @@ export class DebugBox {
         setTimeout(() => {
             if (this.logQueue.length > 0) {
                 const logEntry = document.createElement('div');
-                logEntry.textContent = this.logQueue.join('\n');
+                logEntry.innerHTML = this.logQueue.join('<br>');
                 this.debugContent.appendChild(logEntry);
                 this.debugContent.scrollTop = this.debugContent.scrollHeight;
                 this.logQueue = [];

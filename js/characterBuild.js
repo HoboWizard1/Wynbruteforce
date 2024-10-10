@@ -1,4 +1,5 @@
 import { debugBox } from './debug.js';
+import { debugUtils } from './debugUtils.js';
 
 const API_BASE_URL = 'https://api.wynncraft.com/v3';
 let debounceTimer;
@@ -14,6 +15,11 @@ export function initCharacterBuild() {
 
     // Fetch and cache item database
     fetchItemDatabase();
+    loadCharacterBuild();
+}
+
+export function runDebugChecks() {
+    debugUtils.runAllChecks(`${API_BASE_URL}/item/database`);
 }
 
 async function handleEquipmentInput(event) {
@@ -85,7 +91,7 @@ async function searchItems(query, slot) {
 async function fetchItemDatabase() {
     try {
         debugBox.log('Fetching item database...');
-        const response = await fetch(`${API_BASE_URL}/item/database`);
+        const response = await debugUtils.logNetworkRequest(`${API_BASE_URL}/item/database`);
         const data = await response.json();
         itemDatabase = data.reduce((acc, item) => {
             const slot = item.type.toLowerCase();
@@ -97,6 +103,7 @@ async function fetchItemDatabase() {
     } catch (error) {
         console.error('Error fetching item database:', error);
         debugBox.log(`Error fetching item database: ${error.message}`);
+        debugBox.log(`Error details: ${error.stack}`);
     }
 }
 
@@ -109,7 +116,7 @@ function saveCharacterBuild() {
     debugBox.log('Character build saved to local storage');
 }
 
-function loadCharacterBuild() {
+export function loadCharacterBuild() {
     const savedBuild = localStorage.getItem('characterBuild');
     if (savedBuild) {
         const build = JSON.parse(savedBuild);
@@ -124,5 +131,5 @@ function loadCharacterBuild() {
     }
 }
 
-// Call loadCharacterBuild after DOM content is loaded
-document.addEventListener('DOMContentLoaded', loadCharacterBuild);
+// Remove this event listener
+// document.addEventListener('DOMContentLoaded', loadCharacterBuild);

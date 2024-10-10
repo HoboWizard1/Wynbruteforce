@@ -123,13 +123,6 @@ export class DebugBox {
         this.debugContent.innerHTML = '';
         this.log('Debug content cleared');
     }
-
-    log(message) {
-        const logEntry = document.createElement('div');
-        logEntry.textContent = `${new Date().toISOString()} - ${message}`;
-        this.debugContent.appendChild(logEntry);
-        this.debugContent.scrollTop = this.debugContent.scrollHeight;
-    }
 }
 
 console.log('Creating debugBox instance');

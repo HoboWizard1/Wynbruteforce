@@ -11,34 +11,31 @@
         <h1>Wynncraft Character Builder</h1>
     </header>
     <main>
-        <div class="container">
-            <section id="character-build">
-                <h2>Character Build</h2>
-                <div id="equipment">
-                    <div class="input-container">
-                        <input id="weapon-input" class="equipment-input" data-slot="weapon" type="text" placeholder="Weapon">
-                        <ul id="weapon-input-suggestions" class="suggestions"></ul>
-                    </div>
-                    <div class="input-container">
-                        <input id="helmet-input" class="equipment-input" data-slot="helmet" type="text" placeholder="Helmet">
-                        <ul id="helmet-input-suggestions" class="suggestions"></ul>
-                    </div>
-                    <!-- Repeat for other equipment slots -->
-                </div>
-                <button id="build-button">Build Character</button>
-            </section>
-            <section id="build-summary">
-                <h2>Build Summary</h2>
-                <div id="stat-breakdown">
-                    <h3>Stat Breakdown</h3>
-                    <!-- Stat breakdown will be populated here -->
-                </div>
-                <div id="item-list">
-                    <h3>Item List</h3>
-                    <!-- Item list with collapsible details will be populated here -->
-                </div>
-            </section>
-        </div>
+        <section id="character-build">
+            <h2>Character Build</h2>
+            <div id="equipment">
+                <input id="weapon-input" class="equipment-input" data-slot="weapon" type="text" placeholder="Weapon">
+                <input id="helmet-input" class="equipment-input" data-slot="helmet" type="text" placeholder="Helmet">
+                <input id="chestplate-input" class="equipment-input" data-slot="chestplate" type="text" placeholder="Chestplate">
+                <input id="leggings-input" class="equipment-input" data-slot="leggings" type="text" placeholder="Leggings">
+                <input id="boots-input" class="equipment-input" data-slot="boots" type="text" placeholder="Boots">
+                <input id="ring1-input" class="equipment-input" data-slot="ring" type="text" placeholder="Ring 1">
+                <input id="ring2-input" class="equipment-input" data-slot="ring" type="text" placeholder="Ring 2">
+                <input id="bracelet-input" class="equipment-input" data-slot="bracelet" type="text" placeholder="Bracelet">
+            </div>
+            <button id="build-button">Build Character</button>
+        </section>
+        <section id="build-summary">
+            <h2>Build Summary</h2>
+            <div id="stat-breakdown">
+                <h3>Stat Breakdown</h3>
+                <!-- Stat breakdown will be populated here -->
+            </div>
+            <div id="item-list">
+                <h3>Item List</h3>
+                <!-- Item list with collapsible details will be populated here -->
+            </div>
+        </section>
     </main>
     <script src="js/debug.js" type="module"></script>
     <script src="js/characterBuild.js" type="module"></script>

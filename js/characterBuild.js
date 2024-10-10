@@ -4,8 +4,6 @@ import { debugUtils } from './debugUtils.js';
 const API_BASE_URL = 'https://api.wynncraft.com/v3';
 let debounceTimer;
 let itemCache = {};
-let lastSearchQuery = '';
-let lastSearchResults = [];
 
 const SLOT_TO_CATEGORY_MAP = {
     'weapon': ['bow', 'wand', 'dagger', 'spear', 'relik'],
@@ -23,7 +21,6 @@ export function initCharacterBuild() {
     const equipmentInputs = document.querySelectorAll('.equipment-input');
     equipmentInputs.forEach(input => {
         input.addEventListener('input', handleEquipmentInput);
-        input.addEventListener('keydown', handleEnterKey);
     });
 
     const buildButton = document.getElementById('build-button');
@@ -41,27 +38,22 @@ async function handleEquipmentInput(event) {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
         if (query.length < 2) {
-            displaySuggestions([], input);
+            updateInputStatus(input, []);
             return;
         }
 
         try {
             const items = await searchItems(query, slot);
             updateInputStatus(input, items);
-            displaySuggestions(items, input);
             saveCharacterBuild();
         } catch (error) {
             debugBox.log(`Error searching for items: ${error.message}`);
-            displayError(input, error.message);
+            updateInputStatus(input, []);
         }
     }, 300);
 }
 
 async function searchItems(query, slot) {
-    if (query.toLowerCase() === lastSearchQuery.toLowerCase()) {
-        return lastSearchResults;
-    }
-
     const categories = SLOT_TO_CATEGORY_MAP[slot];
     const searchResults = [];
 
@@ -80,12 +72,9 @@ async function searchItems(query, slot) {
             searchResults.push(...data);
         } catch (error) {
             debugBox.log(`Error searching for ${category} items: ${error.message}`);
-            debugBox.log(`Full error: ${error.stack}`);
         }
     }
 
-    lastSearchQuery = query;
-    lastSearchResults = searchResults;
     return searchResults;
 }
 
@@ -93,105 +82,8 @@ function updateInputStatus(input, items) {
     const exactMatch = items.find(item => item.name.toLowerCase() === input.value.toLowerCase());
     if (exactMatch) {
         input.style.color = 'green';
-    } else if (items.length > 0) {
-        input.style.color = 'black';
     } else {
         input.style.color = 'red';
-    }
-}
-
-function displaySuggestions(items, input) {
-    const suggestionsElement = document.getElementById(`${input.id}-suggestions`);
-    if (!suggestionsElement) {
-        debugBox.log(`Suggestions element not found for input: ${input.id}`);
-        return;
-    }
-    suggestionsElement.innerHTML = '';
-    items.slice(0, 5).forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item.name;
-        li.addEventListener('click', () => {
-            input.value = item.name;
-            suggestionsElement.innerHTML = '';
-            updateInputStatus(input, [item]);
-            saveCharacterBuild();
-        });
-        suggestionsElement.appendChild(li);
-    });
-}
-
-function displayError(input, errorMessage) {
-    const suggestionsElement = document.getElementById(`${input.id}-suggestions`);
-    if (suggestionsElement) {
-        suggestionsElement.innerHTML = `<li class="error">${errorMessage}</li>`;
-    }
-    input.style.color = 'red';
-}
-
-function handleEnterKey(event) {
-    if (event.key === 'Enter') {
-        const suggestionsElement = document.getElementById(`${event.target.id}-suggestions`);
-        const firstSuggestion = suggestionsElement.querySelector('li');
-        if (firstSuggestion) {
-            event.target.value = firstSuggestion.textContent;
-            suggestionsElement.innerHTML = '';
-            updateInputStatus(event.target, [{ name: firstSuggestion.textContent }]);
-            saveCharacterBuild();
-        }
-    }
-}
-
-async function fetchItemDetails(itemName) {
-    if (itemCache[itemName]) {
-        return itemCache[itemName];
-    }
-
-    try {
-        debugBox.log(`Fetching details for item: ${itemName}`);
-        const encodedItemName = encodeURIComponent(itemName);
-        const url = `${API_BASE_URL}/item/${encodedItemName}`;
-        debugBox.log(`API request URL: ${url}`);
-
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        itemCache[itemName] = data;
-        saveItemCacheToLocalStorage();
-        return data;
-    } catch (error) {
-        debugBox.log(`Error fetching details for item ${itemName}: ${error.message}`);
-        debugBox.log(`Full error: ${error.stack}`);
-        
-        // Check if the item is a weapon and try a more specific endpoint
-        if (SLOT_TO_CATEGORY_MAP['weapon'].some(category => itemName.toLowerCase().includes(category))) {
-            debugBox.log(`Attempting to fetch ${itemName} as a weapon`);
-            return fetchWeaponDetails(itemName);
-        }
-        
-        throw error;
-    }
-}
-
-async function fetchWeaponDetails(itemName) {
-    try {
-        const encodedItemName = encodeURIComponent(itemName);
-        const url = `${API_BASE_URL}/item/get/${encodedItemName}`;
-        debugBox.log(`Trying alternative weapon API request URL: ${url}`);
-
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        itemCache[itemName] = data;
-        saveItemCacheToLocalStorage();
-        return data;
-    } catch (error) {
-        debugBox.log(`Error fetching weapon details for ${itemName}: ${error.message}`);
-        debugBox.log(`Full error: ${error.stack}`);
-        throw error;
     }
 }
 
@@ -217,6 +109,32 @@ async function buildCharacter() {
 
     displayStatBreakdown(statBreakdown);
     displayItemList(itemList);
+}
+
+async function fetchItemDetails(itemName) {
+    if (itemCache[itemName]) {
+        return itemCache[itemName];
+    }
+
+    try {
+        debugBox.log(`Fetching details for item: ${itemName}`);
+        const encodedItemName = encodeURIComponent(itemName);
+        const url = `${API_BASE_URL}/item/${encodedItemName}`;
+        debugBox.log(`API request URL: ${url}`);
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        itemCache[itemName] = data;
+        saveItemCacheToLocalStorage();
+        return data;
+    } catch (error) {
+        debugBox.log(`Error fetching details for item ${itemName}: ${error.message}`);
+        debugBox.log(`Full error: ${error.stack}`);
+        throw error;
+    }
 }
 
 function loadItemCacheFromLocalStorage() {

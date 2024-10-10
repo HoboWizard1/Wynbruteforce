@@ -3,7 +3,7 @@ import { debugUtils } from './debugUtils.js';
 
 const API_BASE_URL = 'https://api.wynncraft.com/v3';
 let debounceTimer;
-let itemCache = {};
+let validItemCache = new Set(); // Cache for valid item names
 
 const SLOT_TO_CATEGORY_MAP = {
     'weapon': ['spear', 'bow', 'wand', 'dagger', 'relik'],
@@ -27,6 +27,7 @@ export function initCharacterBuild() {
     buildButton.addEventListener('click', buildCharacter);
 
     loadCharacterBuild();
+    loadValidItemCache(); // Load the valid item cache
 }
 
 let lastDebounceLog = '';
@@ -47,9 +48,19 @@ async function handleEquipmentInput(event) {
             lastDebounceLog = query;
         }
 
+        // Check if the item is already known to be valid
+        if (validItemCache.has(query.toLowerCase())) {
+            updateInputStatus(input, true);
+            saveCharacterBuild();
+            return;
+        }
+
         try {
             const isValid = await checkItemValidity(query, slot);
             updateInputStatus(input, isValid);
+            if (isValid) {
+                validItemCache.add(query.toLowerCase()); // Add to cache if valid
+            }
             saveCharacterBuild();
         } catch (error) {
             debugBox.log(`Error checking item validity: ${error.message}`);
@@ -151,4 +162,17 @@ function loadCharacterBuild() {
 
 function saveCharacterBuild() {
     // Implement character build saving logic here
+}
+
+// Add these functions to save and load the valid item cache
+function saveValidItemCache() {
+    localStorage.setItem('validItemCache', JSON.stringify(Array.from(validItemCache)));
+}
+
+function loadValidItemCache() {
+    const cachedData = localStorage.getItem('validItemCache');
+    if (cachedData) {
+        validItemCache = new Set(JSON.parse(cachedData));
+        debugBox.log('Valid item cache loaded from local storage');
+    }
 }

@@ -37,21 +37,34 @@ async function handleEquipmentInput(event) {
     const slot = input.dataset.slot;
 
     console.log(`Handling input for slot: ${slot}, query: ${query}`);
+    debugBox.log(`Handling input for slot: ${slot}, query: ${query}`);
 
+    // Clear any existing timer
     clearTimeout(debounceTimer);
+
+    // Don't search if the query is empty
+    if (query === '') {
+        updateInputStatus(input, false);
+        return;
+    }
+
+    // Set a new timer
     debounceTimer = setTimeout(async () => {
         try {
             console.log(`Debounce timer fired for slot: ${slot}`);
+            debugBox.log(`Debounce timer fired for slot: ${slot}`);
             const categories = SLOT_TO_CATEGORY_MAP[slot];
             let isValid = false;
             for (const category of categories) {
                 console.log(`Checking validity for category: ${category}`);
+                debugBox.log(`Checking validity for category: ${category}`);
                 if (await checkItemValidityForCategory(query, category)) {
                     isValid = true;
                     break;
                 }
             }
             console.log(`Updating input status: isValid = ${isValid}`);
+            debugBox.log(`Updating input status: isValid = ${isValid}`);
             updateInputStatus(input, isValid);
         } catch (error) {
             console.error(`Error in handleEquipmentInput: ${error.message}`);
@@ -60,7 +73,7 @@ async function handleEquipmentInput(event) {
             debugBox.log(`Error stack: ${error.stack}`);
             updateInputStatus(input, false);
         }
-    }, 300);
+    }, 500); // Increased debounce time to 500ms
 }
 
 async function checkItemValidity(query, slot) {
